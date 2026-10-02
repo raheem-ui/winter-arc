@@ -79,6 +79,12 @@ small, .muted { color: var(--muted); }
 .auth-tabs button.on { background: var(--surface-2); color: var(--text); }
 .divider { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 0.8rem; margin: 18px 0; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.btn.social { background: #fff; color: #111; }
+.btn.social:hover { background: #e8edf5; }
+.btn.social b { font-weight: 800; color: #4285f4; }
+.btn.social.apple { background: #000; color: #fff; border-color: #333; }
+.btn.social.apple:hover { background: #1a1a1a; }
+.btn.social.apple span { font-size: 1.15rem; line-height: 1; }
 .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
 .features div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; font-size: 0.78rem; color: var(--muted); }
 .features b { display: block; color: var(--text); font-size: 1.1rem; }
