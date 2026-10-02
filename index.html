@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Winter Arc Tracker</title>
+  <meta name="description" content="92 days, 7 goals, 2 minutes a night. Track college, internship, gym, diet, skill study, sleep and assignments through the Winter Arc." />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div id="snow" aria-hidden="true"></div>
+
+  <div id="boot" class="boot">
+    <div class="logo-mark">❄</div>
+    <p>Loading your arc…</p>
+  </div>
+
+  <section id="auth" class="auth" hidden></section>
+
+  <div id="app" class="shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo-mark sm">❄</span>
+        <div>
+          <strong>Winter Arc</strong>
+          <small id="brand-sub">2026</small>
+        </div>
+      </div>
+      <nav id="nav" class="nav"></nav>
+      <div class="account">
+        <small id="account-email"></small>
+        <button id="signout" class="btn ghost sm">Sign out</button>
+      </div>
+    </aside>
+    <main id="view" class="view" tabindex="-1"></main>
+    <nav id="bottom-nav" class="bottom-nav"></nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal" class="modal"></dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
