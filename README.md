@@ -41,6 +41,14 @@ supabase/schema.sql database tables + security policies
 4. Open **Authentication → URL Configuration**. Set **Site URL** to your GitHub Pages URL (from step 2 below), e.g. `https://YOUR-USERNAME.github.io/winter-arc/`.
    - *Optional:* Authentication → Providers → Email → turn off "Confirm email" if you want sign-ups to work instantly.
 
+### Optional: Apple, Google and phone sign-in
+The app checks Supabase on load and only shows the buttons for methods that are switched on (Authentication → Sign In / Providers).
+- **Google** (free): create an OAuth client in Google Cloud Console, add the Supabase callback URL `https://<project>.supabase.co/auth/v1/callback`, and paste the Client ID and secret into the Google provider.
+- **Apple** (needs the $99/yr Apple Developer Program): create a Services ID and a Sign in with Apple key. Register the same callback URL and your site's domain, then paste the Services ID and generated secret into the Apple provider. The secret expires every 6 months.
+- **Phone** (needs an SMS provider such as Twilio or MessageBird): enable the Phone provider and enter the SMS provider's credentials. Indian numbers typed without `+91` get it added automatically.
+
+Also add your site to **Authentication → URL Configuration → Redirect URLs** so Apple/Google can send users back.
+
 ### 2. GitHub (no Git install needed)
 1. Go to <https://github.com/new>. Name the repo `winter-arc`, make it **Public**, and click **Create repository**.
 2. Click **uploading an existing file**. Drag in **everything inside** the `winter-arc` folder (index.html, README.md, manifest.webmanifest, and the folders css, js, assets, supabase), then click **Commit changes**.
