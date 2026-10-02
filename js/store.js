@@ -52,6 +52,25 @@ export class SupabaseStore {
     if (error) throw error;
     return data;
   }
+  // Which sign-in methods are switched on in the Supabase dashboard ({ apple, google, phone, ... }).
+  async providers() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_ANON_KEY } });
+      return (await res.json()).external || {};
+    } catch { return {}; }
+  }
+  async signInWithProvider(provider) {
+    const { error } = await this.sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } });
+    if (error) throw error;
+  }
+  async sendPhoneCode(phone, displayName) {
+    const { error } = await this.sb.auth.signInWithOtp({ phone, options: { data: displayName ? { display_name: displayName } : undefined } });
+    if (error) throw error;
+  }
+  async verifyPhoneCode(phone, token) {
+    const { error } = await this.sb.auth.verifyOtp({ phone, token, type: 'sms' });
+    if (error) throw error;
+  }
   async signIn(email, password) {
     const { error } = await this.sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -61,7 +80,7 @@ export class SupabaseStore {
     if (error) throw error;
   }
   async signOut() { await this.sb.auth.signOut(); }
-  get email() { return this.user?.email || ''; }
+  get email() { return this.user?.email || (this.user?.phone ? '+' + this.user.phone.replace(/^\+/, '') : ''); }
   check({ error }) { if (error) throw error; }
 
   async loadAll() {

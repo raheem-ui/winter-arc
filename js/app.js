@@ -62,6 +62,18 @@ function snow() {
 }
 
 // ---------------------------------------------------------------- auth
+let phoneState = { phone: '', sent: false };
+// "98765 43210" / "098765..." / "+91 98765..." → "+919876543210"; other countries need a leading +.
+function normalisePhone(raw) {
+  const s = raw.trim();
+  let digits = s.replace(/\D/g, '');
+  if (s.startsWith('+')) return digits.length >= 8 && digits.length <= 15 ? '+' + digits : null;
+  digits = digits.replace(/^0+/, '');
+  if (digits.length === 10) return '+91' + digits;
+  if (digits.length === 12 && digits.startsWith('91')) return '+' + digits;
+  return null;
+}
+
 function showAuth(mode = 'signin', message = '') {
   S.started = false;
   $('#boot').hidden = true;
@@ -69,6 +81,8 @@ function showAuth(mode = 'signin', message = '') {
   const auth = $('#auth');
   auth.hidden = false;
   const cloud = supabaseConfigured;
+  const P = S.providers || {};
+  if (mode !== 'phone') phoneState = { phone: '', sent: false };
   auth.innerHTML = `
     <div class="auth-card">
       <div class="hero">
@@ -76,21 +90,42 @@ function showAuth(mode = 'signin', message = '') {
         <h1>Winter Arc</h1>
         <p>92 days. 7 goals. 2 minutes a night.</p>
       </div>
-      ${cloud ? `
+      ${cloud && mode === 'phone' ? `
+        <form id="phone-form" novalidate>
+          <h2 style="margin-bottom:14px">Sign in with phone</h2>
+          <div class="field"><label for="p-phone">Mobile number</label><input id="p-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="98765 43210" value="${h(phoneState.phone)}" ${phoneState.sent ? 'readonly' : ''} /><small>Indian numbers get +91 automatically</small></div>
+          ${phoneState.sent ? `
+            <div class="field"><label for="p-code">6-digit code</label><input id="p-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" /></div>
+            <button class="btn block" type="submit">Verify & sign in</button>
+            <p style="text-align:center;margin-top:10px"><a href="#" id="p-change">Change number</a> · <a href="#" id="p-resend">Resend code</a></p>
+          ` : `
+            <div class="field"><label for="p-name">Your name (new users)</label><input id="p-name" autocomplete="name" placeholder="Optional" /></div>
+            <button class="btn block" type="submit">Send code</button>`}
+          <p id="auth-msg" class="${message.startsWith('!') ? 'error' : 'notice'}">${h(message.replace(/^!/, ''))}</p>
+          <p style="text-align:center;margin-top:6px"><a href="#" id="p-back">← Use email instead</a></p>
+        </form>
+        <div class="divider">or</div>
+      ` : ''}
+      ${cloud && mode !== 'phone' ? `
         <div class="auth-tabs">
           <button data-mode="signin" class="${mode === 'signin' ? 'on' : ''}">Sign in</button>
           <button data-mode="signup" class="${mode === 'signup' ? 'on' : ''}">Create account</button>
         </div>
         <form id="auth-form" novalidate>
           ${mode === 'signup' ? `<div class="field"><label for="a-name">Your name</label><input id="a-name" autocomplete="name" placeholder="What should we call you?" /></div>` : ''}
-          <div class="field"><label for="a-email">Email</label><input id="a-email" type="email" autocomplete="email" required /></div>
+          <div class="field"><label for="a-email">Email</label><input id="a-email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required /></div>
           <div class="field"><label for="a-pass">Password</label><input id="a-pass" type="password" minlength="6" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}" required /></div>
           <button class="btn block" type="submit">${mode === 'signup' ? 'Start my arc' : 'Sign in'}</button>
           ${mode === 'signin' ? `<p style="text-align:center;margin-top:10px"><a href="#" id="forgot">Forgot password?</a></p>` : ''}
           <p id="auth-msg" class="${message.startsWith('!') ? 'error' : 'notice'}">${h(message.replace(/^!/, ''))}</p>
         </form>
         <div class="divider">or</div>
-      ` : `<p class="notice" style="margin-bottom:14px">Cloud sync isn't configured yet (see README). You can use the full app in demo mode; data stays in this browser.</p>`}
+      ` : ''}
+      ${cloud ? `<div class="stack" style="gap:10px;margin-bottom:10px">
+        ${P.apple ? `<button class="btn block social apple" data-provider="apple"><svg aria-hidden="true" width="16" height="18" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Continue with Apple</button>` : ''}
+        ${P.google ? `<button class="btn block social" data-provider="google"><b aria-hidden="true">G</b> Continue with Google</button>` : ''}
+        ${P.phone && mode !== 'phone' ? `<button class="btn ghost block" id="use-phone">📱 Use phone number</button>` : ''}
+      </div>` : `<p class="notice" style="margin-bottom:14px">Cloud sync isn't configured yet (see README). You can use the full app in demo mode; data stays in this browser.</p>`}
       <button id="demo" class="btn ${cloud ? 'ghost' : ''} block">Try it without an account</button>
       <div class="features">
         <div><b>7</b>daily goals</div>
@@ -100,6 +135,40 @@ function showAuth(mode = 'signin', message = '') {
     </div>`;
 
   $$('.auth-tabs button', auth).forEach((b) => b.addEventListener('click', () => showAuth(b.dataset.mode)));
+  $$('[data-provider]', auth).forEach((b) => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try { await S.store.signInWithProvider(b.dataset.provider); } // browser redirects to Apple / Google
+    catch (err) { b.disabled = false; toast(err.message, true); }
+  }));
+  $('#use-phone', auth)?.addEventListener('click', () => showAuth('phone'));
+  $('#p-back', auth)?.addEventListener('click', (e) => { e.preventDefault(); showAuth('signin'); });
+  $('#p-change', auth)?.addEventListener('click', (e) => { e.preventDefault(); phoneState.sent = false; showAuth('phone'); });
+  const sendCode = async (msgOnOk) => {
+    await S.store.sendPhoneCode(phoneState.phone, phoneState.name);
+    phoneState.sent = true;
+    showAuth('phone', msgOnOk);
+  };
+  $('#p-resend', auth)?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try { await sendCode(`New code sent to ${phoneState.phone}.`); } catch (err) { showAuth('phone', '!' + err.message); }
+  });
+  $('#phone-form', auth)?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('button[type=submit]', e.target);
+    btn.disabled = true;
+    try {
+      if (!phoneState.sent) {
+        const phone = normalisePhone($('#p-phone').value);
+        if (!phone) { btn.disabled = false; return showAuth('phone', '!Enter a valid mobile number.'); }
+        phoneState = { phone, name: $('#p-name').value.trim(), sent: false };
+        await sendCode(`Code sent to ${phone}. It expires in a few minutes.`);
+      } else {
+        const code = $('#p-code').value.replace(/\D/g, '');
+        if (code.length !== 6) { btn.disabled = false; return ($('#auth-msg').className = 'error', $('#auth-msg').textContent = 'Enter the 6-digit code from the SMS.'); }
+        await S.store.verifyPhoneCode(phoneState.phone, code); // onAuthChange starts the app
+      }
+    } catch (err) { showAuth('phone', '!' + err.message); }
+  });
   $('#demo', auth).addEventListener('click', () => { lsSet('winterArc.mode', 'local'); startApp(new LocalStore()); });
   $('#forgot', auth)?.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -965,7 +1034,7 @@ async function boot() {
   const store = new SupabaseStore();
   S.store = store;
   let user;
-  try { user = await store.init(); }
+  try { [user, S.providers] = await Promise.all([store.init(), store.providers()]); }
   catch (e) { console.error(e); return showAuth('signin', '!Could not reach the server. Check your connection.'); }
   store.onAuthChange(async (u, event) => {
     if (event === 'PASSWORD_RECOVERY') {
