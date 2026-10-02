@@ -5,12 +5,20 @@ import { GOALS } from './data.js';
 export const pad = (n) => String(n).padStart(2, '0');
 export const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 export const parseISO = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
-export const todayISO = () => toISO(new Date());
+// "Now" is always India Standard Time, whatever timezone the device is set to.
+export const TZ = 'Asia/Kolkata';
+const nowFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+export function nowIST() {
+  const p = Object.fromEntries(nowFmt.formatToParts(new Date()).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour), minute: Number(p.minute) };
+}
+export const todayISO = () => nowIST().date;
+export const clockIST = () => new Date().toLocaleString('en-IN', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
 export const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() + n); return toISO(d); };
 export const diffDays = (a, b) => Math.round((parseISO(a) - parseISO(b)) / 86400000); // a - b
 export const isSunday = (s) => parseISO(s).getDay() === 0;
 export const dayName = (s) => parseISO(s).toLocaleDateString('en-US', { weekday: 'short' });
-export const fmtDate = (s, opts = { day: '2-digit', month: 'short' }) => (s ? parseISO(s).toLocaleDateString('en-GB', opts) : '');
+export const fmtDate = (s, opts = { day: '2-digit', month: 'short' }) => (s ? parseISO(s).toLocaleDateString('en-IN', opts) : '');
 
 export function arcDates(settings) {
   const out = [];

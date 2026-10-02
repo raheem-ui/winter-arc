@@ -2,7 +2,7 @@ import { SupabaseStore, LocalStore, supabaseConfigured } from './store.js';
 import { DEFAULT_SETTINGS, GOALS, ASSIGNMENT_STATUSES, SCHEDULE, GYM, DIET, WEIGHT_MILESTONES, AUTOMATIONS } from './data.js';
 import {
   todayISO, addDays, diffDays, isSunday, dayName, fmtDate, parseISO, buildDays, computeRow, dashboard,
-  assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor,
+  assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor, nowIST, clockIST,
 } from './calc.js';
 
 // ---------------------------------------------------------------- state
@@ -146,6 +146,7 @@ async function startApp(store) {
   $('#account-email').textContent = store.email;
   $('#brand-sub').textContent = store.kind === 'local' ? 'Demo mode' : S.settings.displayName || 'Synced';
   render();
+  tick();
 }
 
 $('#signout').addEventListener('click', signOut);
@@ -192,7 +193,7 @@ const settingsBtn = `<a href="#/settings" class="icon-btn mobile-only" aria-labe
 
 // ---------------------------------------------------------------- dashboard
 function greeting() {
-  const hr = new Date().getHours();
+  const hr = nowIST().hour;
   const part = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
   return S.settings.displayName ? `${part}, ${h(S.settings.displayName)}` : part;
 }
@@ -247,6 +248,7 @@ const dashboardView = {
             <h1>${h(d.phase || (today < s.arcStart ? 'Starts ' + fmtDate(s.arcStart) : 'Winter Arc complete'))}</h1>
             ${phase ? `<p class="muted" style="margin-top:6px;max-width:60ch">${h(phase.focus)}</p>` : ''}
             <div class="meta">
+              <span class="chip ist-clock">🕒 ${clockIST()} IST</span>
               <span class="chip ice">${d.daysLeft} days left</span>
               <span class="chip">${d.daysLogged} logged</span>
               <span class="chip ${d.currentStreak ? 'good' : ''}">🔥 ${d.currentStreak} day streak</span>
@@ -760,7 +762,7 @@ const PLAN = {
     </div><div class="spacer"></div><div class="callout"><span class="ico">☾</span><p>${h(SCHEDULE.note)}</p></div>`;
   },
   gym() {
-    const todayIdx = (new Date().getDay() + 6) % 7;
+    const todayIdx = (parseISO(todayISO()).getDay() + 6) % 7;
     return `<p class="muted" style="margin-bottom:14px">${h(GYM.intro)}</p>
       <div class="grid g2">${GYM.days.map((d, i) => `
         <div class="card gym-day ${i === todayIdx ? 'today' : ''}">
@@ -975,6 +977,18 @@ async function boot() {
   });
   user ? startApp(store) : showAuth();
 }
+
+// Live IST clock; re-render when the IST date rolls over so "today" stays correct.
+let lastDay = todayISO();
+function tick() {
+  $$('.ist-clock').forEach((el) => (el.textContent = `🕒 ${clockIST()} IST`));
+  if (S.started && todayISO() !== lastDay) {
+    lastDay = todayISO();
+    recompute();
+    if (parseRoute().name !== 'log') render();
+  }
+}
+setInterval(tick, 20000);
 
 snow();
 boot();
