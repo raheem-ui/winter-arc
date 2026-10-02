@@ -1,7 +1,7 @@
 // Storage adapters. Both expose the same async interface so the UI doesn't care
 // whether data lives in Supabase (synced, multi-user) or in this browser (demo mode).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { DEFAULT_SETTINGS } from './data.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=5';
+import { DEFAULT_SETTINGS } from './data.js?v=5';
 
 export const supabaseConfigured =
   /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('YOUR_');

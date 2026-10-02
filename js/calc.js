@@ -1,5 +1,5 @@
 // Calculation engine. Each function mirrors a formula from the original workbook.
-import { GOALS } from './data.js';
+import { GOALS } from './data.js?v=5';
 
 // ---------- dates (local, YYYY-MM-DD strings) ----------
 export const pad = (n) => String(n).padStart(2, '0');

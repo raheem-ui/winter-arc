@@ -1,9 +1,9 @@
-import { SupabaseStore, LocalStore, supabaseConfigured } from './store.js';
-import { DEFAULT_SETTINGS, GOALS, ASSIGNMENT_STATUSES, SCHEDULE, GYM, DIET, WEIGHT_MILESTONES, AUTOMATIONS } from './data.js';
+import { SupabaseStore, LocalStore, supabaseConfigured } from './store.js?v=5';
+import { DEFAULT_SETTINGS, GOALS, ASSIGNMENT_STATUSES, SCHEDULE, GYM, DIET, WEIGHT_MILESTONES, AUTOMATIONS } from './data.js?v=5';
 import {
   todayISO, addDays, diffDays, isSunday, dayName, fmtDate, parseISO, buildDays, computeRow, dashboard,
   assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor, nowIST, clockIST,
-} from './calc.js';
+} from './calc.js?v=5';
 
 // ---------------------------------------------------------------- state
 const S = { store: null, started: false, settings: null, logs: {}, assignments: [], reviews: {}, days: [], dash: null, charts: [], asgFilter: 'open', showFuture: false };
@@ -626,7 +626,18 @@ const historyView = {
         </div>
       </div>
       ${rows.length ? `
-      <div class="table-wrap">
+      <div class="day-list only-phone">
+        ${rows.map((d) => `
+          <a class="day-card ${d.date === today ? 'is-today' : ''} ${d.date > today ? 'is-future' : ''}" href="#/log/${d.date}">
+            <div class="flex between">
+              <div><b>${fmtDate(d.date, { weekday: 'short', day: 'numeric', month: 'short' })}</b>${d.streak ? ` <span class="muted">🔥 ${d.streak}</span>` : ''}</div>
+              ${d.score != null ? `<span class="chip ${d.score >= S.settings.goodDayThreshold ? 'good' : 'warn'}">${pct(d.score)}</span>` : d.date < today ? '<span class="chip bad">missed</span>' : '<span class="chip">—</span>'}
+            </div>
+            ${d.logged ? `<div class="dots">${GOALS.map((g) => `<span class="dot-${d[g.key] === 'Y' ? 'y' : d[g.key] === 'N' ? 'n' : 'o'}" title="${g.short}">${g.short}</span>`).join('')}</div>
+            <div class="muted day-meta">${[d.sleepHrs != null ? `😴 ${d.sleepHrs}h` : '', d.skillMin ? `📚 ${d.skillMin}m` : '', d.weight ? `⚖ ${d.weight} kg` : ''].filter(Boolean).join(' · ')}${d.notes ? ` · ${h(d.notes)}` : ''}</div>` : ''}
+          </a>`).join('')}
+      </div>
+      <div class="table-wrap only-desktop">
         <table>
           <thead><tr><th>Date</th><th>Phase</th><th>College</th><th>Intern</th><th>Gym</th><th>Diet</th><th>Skill</th><th>Assign</th><th>Sleep</th><th>Weight</th><th>Score</th><th>Streak</th><th>Notes</th></tr></thead>
           <tbody>
@@ -809,7 +820,7 @@ const weeklyView = {
 
 // ---------------------------------------------------------------- plan
 const PLAN_TABS = [['timeline', 'Timeline'], ['schedule', 'Daily schedule'], ['gym', 'Gym split'], ['diet', 'Diet'], ['weight', 'Weight plan'], ['automations', 'Automations']];
-const simpleTable = (head, rows) => `<div class="table-wrap"><table><thead><tr>${head.map((x) => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${i === r.length - 1 || String(c).length > 40 ? 'wrap' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const simpleTable = (head, rows) => `<div class="table-wrap cards"><table><thead><tr>${head.map((x) => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td data-label="${head[i]}" class="${i === r.length - 1 || String(c).length > 40 ? 'wrap' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 const PLAN = {
   timeline() {
