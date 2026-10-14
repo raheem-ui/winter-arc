@@ -5,6 +5,7 @@ import {
   assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor, nowIST, clockIST,
 } from './calc.js?v=5';
 import { evaluateAchievements, getLevel, achievementXP } from './achievements.js?v=6';
+import { burstConfetti } from './confetti.js?v=7';
 
 // ---------------------------------------------------------------- state
 const S = { store: null, started: false, settings: null, logs: {}, assignments: [], reviews: {}, days: [], dash: null, charts: [], asgFilter: 'open', showFuture: false };
@@ -45,6 +46,36 @@ async function safely(fn, okMsg) {
 function recompute() {
   S.days = buildDays(S.logs, S.settings);
   S.dash = dashboard(S.days, S.assignments, S.settings);
+}
+
+// Celebrates freshly unlocked achievement badges with confetti + modal.
+// Seen ids are stored per user so each badge celebrates exactly once.
+function celebrateNewBadges() {
+  try {
+    const evaluated = evaluateAchievements(S.days, S.assignments, S.settings);
+    const unlocked = evaluated.filter((a) => a.unlocked);
+    const ids = unlocked.map((a) => a.id);
+    const key = `winterArc.achSeen.${S.store?.kind || 'x'}.${S.store?.user?.id || 'anon'}`;
+    const raw = lsGet(key);
+    if (!raw) { lsSet(key, JSON.stringify(ids)); return; }
+    const seen = JSON.parse(raw || '[]');
+    const fresh = unlocked.filter((a) => !seen.includes(a.id));
+    lsSet(key, JSON.stringify(ids));
+    if (!fresh.length) return;
+    burstConfetti({ count: fresh.length > 1 ? 220 : 150 });
+    const modal = $('#modal');
+    const [first, ...rest] = fresh;
+    modal.innerHTML = `
+      <form method="dialog" class="celebrate">
+        <div class="celebrate-ico">${first.icon}</div>
+        <div class="kicker">Achievement unlocked${fresh.length > 1 ? ` × ${fresh.length}` : ''}</div>
+        <h2>${h(first.name)}</h2>
+        <p class="muted">${h(first.desc)}</p>
+        ${rest.length ? `<p class="muted" style="margin-top:8px">Also: ${rest.map((a) => `${a.icon} ${h(a.name)}`).join(' · ')}</p>` : ''}
+        <button class="btn block" value="ok" style="margin-top:16px">Keep going ❄</button>
+      </form>`;
+    modal.showModal();
+  } catch { /* celebration never breaks the app */ }
 }
 
 function destroyCharts() { S.charts.forEach((c) => c.destroy()); S.charts = []; }
@@ -390,7 +421,7 @@ const dashboardView = {
         </div>
       </div>`;
   },
-  bind() { scoreChart($('#c-score')); weightChart($('#c-weight')); },
+  bind() { scoreChart($('#c-score')); weightChart($('#c-weight')); celebrateNewBadges(); },
 };
 
 // ---------------------------------------------------------------- charts

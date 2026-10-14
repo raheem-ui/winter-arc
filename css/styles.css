@@ -356,6 +356,12 @@ ul.clean li::marker { color: var(--ice); }
 .ach-bar { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin: 6px 0 4px; }
 .ach-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--ice-2), var(--good)); }
 .ach.on .ach-bar > span { background: var(--good); }
+
+/* confetti + achievement celebration */
+.confetti-canvas { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.celebrate { text-align: center; }
+.celebrate-ico { font-size: 3.2rem; line-height: 1; margin-bottom: 8px; }
+.celebrate h2 { margin: 4px 0 6px; }
 .spacer { height: 16px; }
 .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .between { justify-content: space-between; }
