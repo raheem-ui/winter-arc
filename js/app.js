@@ -4,6 +4,7 @@ import {
   todayISO, addDays, diffDays, isSunday, dayName, fmtDate, parseISO, buildDays, computeRow, dashboard,
   assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor, nowIST, clockIST,
 } from './calc.js?v=5';
+import { evaluateAchievements, getLevel, achievementXP } from './achievements.js?v=6';
 
 // ---------------------------------------------------------------- state
 const S = { store: null, started: false, settings: null, logs: {}, assignments: [], reviews: {}, days: [], dash: null, charts: [], asgFilter: 'open', showFuture: false };
@@ -295,6 +296,10 @@ const dashboardView = {
     const phase = s.phases.find((p) => p.name === d.phase);
     const progress = d.dayOfArc ? d.dayOfArc / d.totalDays : 0;
     const ringC = 2 * Math.PI * 50;
+    const ach = evaluateAchievements(S.days, S.assignments, S.settings);
+    const achUnlocked = ach.filter((a) => a.unlocked).length;
+    const achLevel = getLevel(achUnlocked);
+    const achXP = achievementXP(ach, S.days);
     const callouts = [];
     if (today >= s.arcStart && today <= s.arcEnd && !todayRow?.logged)
       callouts.push(`<div class="callout"><span class="ico">✎</span><div><b>Today isn't logged yet.</b><p class="muted">Two minutes at 10:15 PM keeps the streak alive.</p></div><a class="btn sm" href="#/log/${today}" style="margin-left:auto">Log today</a></div>`);
@@ -346,6 +351,19 @@ const dashboardView = {
           <div class="tile"><small>Kg to target</small><b>${dash(d.kgToTarget)}</b><span>target ${s.targetWeight} kg</span></div>
           <div class="tile"><small>On-pace weight today</small><b>${d.onPaceToday} kg</b><span>${d.latestWeight ? (d.latestWeight - d.onPaceToday <= 0 ? 'ahead of plan ✓' : `${(d.latestWeight - d.onPaceToday).toFixed(1)} kg behind`) : 'weigh in Mon/Wed/Fri'}</span></div>
           <div class="tile"><small>Days logged</small><b>${d.daysLogged}</b><span>of ${d.dayOfArc || 0} so far</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>${achLevel.icon} Achievements · ${h(achLevel.name)}</h2><p>${achUnlocked}/${ach.length} unlocked · ${achXP} XP</p></div>
+          <div class="ach-grid">
+            ${ach.map((a) => `
+              <div class="ach ${a.unlocked ? 'on' : 'locked'}" title="${h(a.desc)} (${a.progress}/${a.total})">
+                <span class="ach-ico">${a.icon}</span>
+                <div><div class="ach-name">${h(a.name)}</div><small>${h(a.desc)}</small>
+                <div class="ach-bar"><span style="width:${a.pct}%"></span></div>
+                <small class="muted">${a.unlocked ? 'Unlocked ✓' : `${a.progress}/${a.total}`}</small></div>
+              </div>`).join('')}
+          </div>
         </div>
 
         <div class="grid g2">

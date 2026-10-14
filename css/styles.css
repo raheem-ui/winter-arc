@@ -344,6 +344,18 @@ ul.clean li::marker { color: var(--ice); }
 
 .empty { text-align: center; padding: 30px 16px; color: var(--muted); }
 .empty .ico { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+/* achievements */
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.ach { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); }
+.ach.on { border-color: rgba(52, 211, 153, 0.45); background: rgba(52, 211, 153, 0.06); }
+.ach.locked { opacity: 0.65; }
+.ach-ico { font-size: 1.5rem; line-height: 1; }
+.ach.locked .ach-ico { filter: grayscale(1); opacity: 0.6; }
+.ach-name { font-weight: 700; font-size: 0.9rem; }
+.ach-bar { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin: 6px 0 4px; }
+.ach-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--ice-2), var(--good)); }
+.ach.on .ach-bar > span { background: var(--good); }
 .spacer { height: 16px; }
 .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .between { justify-content: space-between; }
