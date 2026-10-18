@@ -4,6 +4,8 @@ import {
   todayISO, addDays, diffDays, isSunday, dayName, fmtDate, parseISO, buildDays, computeRow, dashboard,
   assignmentFlag, arcWeeks, weekStats, onPaceForDate, macros, phaseFor, nowIST, clockIST,
 } from './calc.js?v=5';
+import { evaluateAchievements, getLevel, achievementXP } from './achievements.js?v=6';
+import { burstConfetti } from './confetti.js?v=7';
 
 // ---------------------------------------------------------------- state
 const S = { store: null, started: false, settings: null, logs: {}, assignments: [], reviews: {}, days: [], dash: null, charts: [], asgFilter: 'open', showFuture: false };
@@ -44,6 +46,36 @@ async function safely(fn, okMsg) {
 function recompute() {
   S.days = buildDays(S.logs, S.settings);
   S.dash = dashboard(S.days, S.assignments, S.settings);
+}
+
+// Celebrates freshly unlocked achievement badges with confetti + modal.
+// Seen ids are stored per user so each badge celebrates exactly once.
+function celebrateNewBadges() {
+  try {
+    const evaluated = evaluateAchievements(S.days, S.assignments, S.settings);
+    const unlocked = evaluated.filter((a) => a.unlocked);
+    const ids = unlocked.map((a) => a.id);
+    const key = `winterArc.achSeen.${S.store?.kind || 'x'}.${S.store?.user?.id || 'anon'}`;
+    const raw = lsGet(key);
+    if (!raw) { lsSet(key, JSON.stringify(ids)); return; }
+    const seen = JSON.parse(raw || '[]');
+    const fresh = unlocked.filter((a) => !seen.includes(a.id));
+    lsSet(key, JSON.stringify(ids));
+    if (!fresh.length) return;
+    burstConfetti({ count: fresh.length > 1 ? 220 : 150 });
+    const modal = $('#modal');
+    const [first, ...rest] = fresh;
+    modal.innerHTML = `
+      <form method="dialog" class="celebrate">
+        <div class="celebrate-ico">${first.icon}</div>
+        <div class="kicker">Achievement unlocked${fresh.length > 1 ? ` × ${fresh.length}` : ''}</div>
+        <h2>${h(first.name)}</h2>
+        <p class="muted">${h(first.desc)}</p>
+        ${rest.length ? `<p class="muted" style="margin-top:8px">Also: ${rest.map((a) => `${a.icon} ${h(a.name)}`).join(' · ')}</p>` : ''}
+        <button class="btn block" value="ok" style="margin-top:16px">Keep going ❄</button>
+      </form>`;
+    modal.showModal();
+  } catch { /* celebration never breaks the app */ }
 }
 
 function destroyCharts() { S.charts.forEach((c) => c.destroy()); S.charts = []; }
@@ -295,6 +327,10 @@ const dashboardView = {
     const phase = s.phases.find((p) => p.name === d.phase);
     const progress = d.dayOfArc ? d.dayOfArc / d.totalDays : 0;
     const ringC = 2 * Math.PI * 50;
+    const ach = evaluateAchievements(S.days, S.assignments, S.settings);
+    const achUnlocked = ach.filter((a) => a.unlocked).length;
+    const achLevel = getLevel(achUnlocked);
+    const achXP = achievementXP(ach, S.days);
     const callouts = [];
     if (today >= s.arcStart && today <= s.arcEnd && !todayRow?.logged)
       callouts.push(`<div class="callout"><span class="ico">✎</span><div><b>Today isn't logged yet.</b><p class="muted">Two minutes at 10:15 PM keeps the streak alive.</p></div><a class="btn sm" href="#/log/${today}" style="margin-left:auto">Log today</a></div>`);
@@ -348,6 +384,19 @@ const dashboardView = {
           <div class="tile"><small>Days logged</small><b>${d.daysLogged}</b><span>of ${d.dayOfArc || 0} so far</span></div>
         </div>
 
+        <div class="card">
+          <div class="card-head"><h2>${achLevel.icon} Achievements · ${h(achLevel.name)}</h2><p>${achUnlocked}/${ach.length} unlocked · ${achXP} XP</p></div>
+          <div class="ach-grid">
+            ${ach.map((a) => `
+              <div class="ach ${a.unlocked ? 'on' : 'locked'}" title="${h(a.desc)} (${a.progress}/${a.total})">
+                <span class="ach-ico">${a.icon}</span>
+                <div><div class="ach-name">${h(a.name)}</div><small>${h(a.desc)}</small>
+                <div class="ach-bar"><span style="width:${a.pct}%"></span></div>
+                <small class="muted">${a.unlocked ? 'Unlocked ✓' : `${a.progress}/${a.total}`}</small></div>
+              </div>`).join('')}
+          </div>
+        </div>
+
         <div class="grid g2">
           <div class="card">
             <div class="card-head"><h2>Goal hit rates</h2><p>Y ÷ (Y + N)</p></div>
@@ -372,7 +421,7 @@ const dashboardView = {
         </div>
       </div>`;
   },
-  bind() { scoreChart($('#c-score')); weightChart($('#c-weight')); },
+  bind() { scoreChart($('#c-score')); weightChart($('#c-weight')); celebrateNewBadges(); },
 };
 
 // ---------------------------------------------------------------- charts
